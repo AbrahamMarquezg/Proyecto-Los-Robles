@@ -1,16 +1,35 @@
-# React + Vite
+# Residencial Los Robles
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Prototipo académico desarrollado con React y Vite para la administracion de servicios de un residencial.
 
-Currently, two official plugins are available:
+## Fase 2
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Esta version incorpora el segundo progreso del proyecto:
 
-## React Compiler
+- H03: Panel de pagos con resumen financiero, búsqueda, filtros, registro de pagos y persistencia local.
+- H07: Recuperacion de contraseña con validación de correo, código académico y actualizacion local.
+- Integracion con el acceso y la navegacion desarrollados en la Fase 1.
+- Ajustes responsivos para computadora, tableta y telefono.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Credenciales iniciales
 
-## Expanding the Oxlint configuration
+- Correo: residente@losrobles.mx
+- Contraseña: Robles2026
+- Código académico de recuperacion: ROBLES26
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Ejecucion
+
+```bash
+npm install
+npm run dev
+```
+
+## Compilacion
+
+```bash
+npm run build
+```
+
+## Alcance académico
+
+La información se conserva con localStorage para demostrar el comportamiento del prototipo. Una implementacion productiva requiere backend, base de datos, autenticación segura, hash de contraseñas, permisos por rol y auditoria.
