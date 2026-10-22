@@ -1,209 +1,135 @@
 import { useMemo, useState } from "react";
 import "./App.css";
 
-const USUARIO_INICIAL = {
-  correo: "residente@losrobles.mx",
-  contraseña: "Robles2026",
-  nombre: "Residente de demostración",
-};
-
+const USUARIO_INICIAL = { correo: "residente@losrobles.mx", contrasena: "Robles2026", nombre: "Residente de demostración" };
 const PAGOS_INICIALES = [
-  { id: 1, vivienda: "A-01", residente: "Laura Martinez", concepto: "Cuota de mantenimiento", periodo: "Octubre 2026", monto: 1250, vencimiento: "2026-10-10", fechaPago: "2026-10-04", método: "Transferencia", estado: "Pagado" },
-  { id: 2, vivienda: "A-02", residente: "Carlos Ramirez", concepto: "Cuota de mantenimiento", periodo: "Octubre 2026", monto: 1250, vencimiento: "2026-10-10", fechaPago: "", método: "", estado: "Vencido" },
-  { id: 3, vivienda: "B-03", residente: "Maria Lopez", concepto: "Cuota de mantenimiento", periodo: "Octubre 2026", monto: 1250, vencimiento: "2026-10-18", fechaPago: "", método: "", estado: "Pendiente" },
-  { id: 4, vivienda: "B-04", residente: "Jorge Hernandez", concepto: "Cuota de mantenimiento", periodo: "Octubre 2026", monto: 1250, vencimiento: "2026-10-10", fechaPago: "2026-10-08", método: "Efectivo", estado: "Pagado" },
-  { id: 5, vivienda: "C-05", residente: "Ana Torres", concepto: "Cuota de mantenimiento", periodo: "Octubre 2026", monto: 1250, vencimiento: "2026-10-18", fechaPago: "", método: "", estado: "Pendiente" },
-  { id: 6, vivienda: "C-06", residente: "Ricardo Gomez", concepto: "Cuota de mantenimiento", periodo: "Octubre 2026", monto: 1250, vencimiento: "2026-10-10", fechaPago: "", método: "", estado: "Vencido" },
+  { id: 1, vivienda: "A-01", residente: "Laura Martínez", concepto: "Cuota de mantenimiento", periodo: "Octubre 2026", monto: 1250, vencimiento: "2026-10-10", fechaPago: "2026-10-04", metodo: "Transferencia", estado: "Pagado" },
+  { id: 2, vivienda: "A-02", residente: "Carlos Ramírez", concepto: "Cuota de mantenimiento", periodo: "Octubre 2026", monto: 1250, vencimiento: "2026-10-10", fechaPago: "", metodo: "", estado: "Vencido" },
+  { id: 3, vivienda: "B-03", residente: "María López", concepto: "Cuota de mantenimiento", periodo: "Octubre 2026", monto: 1250, vencimiento: "2026-10-18", fechaPago: "", metodo: "", estado: "Pendiente" },
+  { id: 4, vivienda: "B-04", residente: "Jorge Hernández", concepto: "Cuota de mantenimiento", periodo: "Octubre 2026", monto: 1250, vencimiento: "2026-10-10", fechaPago: "2026-10-08", metodo: "Efectivo", estado: "Pagado" },
+  { id: 5, vivienda: "C-05", residente: "Ana Torres", concepto: "Cuota de mantenimiento", periodo: "Octubre 2026", monto: 1250, vencimiento: "2026-10-18", fechaPago: "", metodo: "", estado: "Pendiente" },
+  { id: 6, vivienda: "C-06", residente: "Ricardo Gómez", concepto: "Cuota de mantenimiento", periodo: "Octubre 2026", monto: 1250, vencimiento: "2026-10-10", fechaPago: "", metodo: "", estado: "Vencido" },
+];
+const AVISOS_INICIALES = [
+  { id: 1, titulo: "Mantenimiento de áreas verdes", categoria: "Mantenimiento", destinatarios: "Todos los residentes", fecha: "2026-10-20", contenido: "Se realizará mantenimiento en jardines de 08:00 a 13:00 horas.", estado: "Activo" },
+  { id: 2, titulo: "Recordatorio de cuota", categoria: "Administración", destinatarios: "Viviendas con adeudo", fecha: "2026-10-19", contenido: "Favor de regularizar la cuota mensual de mantenimiento.", estado: "Activo" },
+];
+const VISITAS_INICIALES = [
+  { id: 1, visitante: "Sofía Luna", identificacion: "INE-Demo-01", vivienda: "A-01", autoriza: "Laura Martínez", motivo: "Visita familiar", entrada: "2026-10-21T10:20", salida: "", estado: "Dentro" },
+  { id: 2, visitante: "Pedro Cano", identificacion: "LIC-Demo-02", vivienda: "B-04", autoriza: "Jorge Hernández", motivo: "Servicio técnico", entrada: "2026-10-21T09:00", salida: "2026-10-21T10:10", estado: "Finalizada" },
+];
+const INCIDENCIAS_INICIALES = [
+  { id: 1, folio: "INC-2026-001", vivienda: "C-05", categoria: "Alumbrado", prioridad: "Media", descripcion: "Luminaria intermitente junto al área común.", fecha: "2026-10-20", estado: "Recibida" },
+  { id: 2, folio: "INC-2026-002", vivienda: "A-02", categoria: "Mantenimiento", prioridad: "Alta", descripcion: "Fuga de agua en la zona de estacionamiento.", fecha: "2026-10-21", estado: "En atención" },
 ];
 
 const validarCorreo = (valor) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
 const hoy = () => new Date().toISOString().slice(0, 10);
+const ahoraLocal = () => {
+  const d = new Date();
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+};
 const dinero = (cantidad) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(cantidad);
-
-function obtenerUsuario() {
-  try {
-    return JSON.parse(localStorage.getItem("losRoblesUsuario")) || USUARIO_INICIAL;
-  } catch {
-    return USUARIO_INICIAL;
-  }
-}
-
-function obtenerPagos() {
-  try {
-    return JSON.parse(localStorage.getItem("losRoblesPagos")) || PAGOS_INICIALES;
-  } catch {
-    return PAGOS_INICIALES;
-  }
-}
+const leer = (clave, inicial) => { try { return JSON.parse(localStorage.getItem(clave)) || inicial; } catch { return inicial; } };
+const guardar = (clave, valor, setter) => { setter(valor); localStorage.setItem(clave, JSON.stringify(valor)); };
 
 function App() {
-  const [usuario, setUsuario] = useState(obtenerUsuario);
-  const [pagos, setPagos] = useState(obtenerPagos);
-  const [correo, setCorreo] = useState("");
-  const [contraseña, setContraseña] = useState("");
-  const [mensaje, setMensaje] = useState("");
-  const [tipoMensaje, setTipoMensaje] = useState("");
-  const [sesiónIniciada, setSesiónIniciada] = useState(false);
-  const [vista, setVista] = useState("inicio");
-  const [búsqueda, setBúsqueda] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("Todos");
-  const [pagoSeleccionado, setPagoSeleccionado] = useState(null);
-  const [métodoPago, setMétodoPago] = useState("Transferencia");
-  const [pasoRecuperacion, setPasoRecuperacion] = useState(1);
-  const [correoRecuperacion, setCorreoRecuperacion] = useState("");
-  const [código, setCódigo] = useState("");
-  const [nuevaContraseña, setNuevaContraseña] = useState("");
-  const [confirmarContraseña, setConfirmarContraseña] = useState("");
+  const [usuario, setUsuario] = useState(() => leer("losRoblesUsuario", USUARIO_INICIAL));
+  const [pagos, setPagos] = useState(() => leer("losRoblesPagos", PAGOS_INICIALES));
+  const [avisos, setAvisos] = useState(() => leer("losRoblesAvisos", AVISOS_INICIALES));
+  const [visitas, setVisitas] = useState(() => leer("losRoblesVisitas", VISITAS_INICIALES));
+  const [incidencias, setIncidencias] = useState(() => leer("losRoblesIncidencias", INCIDENCIAS_INICIALES));
+  const [correo, setCorreo] = useState(""); const [contrasena, setContrasena] = useState("");
+  const [mensaje, setMensaje] = useState(""); const [tipoMensaje, setTipoMensaje] = useState("");
+  const [sesionIniciada, setSesionIniciada] = useState(false); const [vista, setVista] = useState("inicio");
+  const [busqueda, setBusqueda] = useState(""); const [filtroEstado, setFiltroEstado] = useState("Todos");
+  const [pagoSeleccionado, setPagoSeleccionado] = useState(null); const [metodoPago, setMetodoPago] = useState("Transferencia");
+  const [pasoRecuperacion, setPasoRecuperacion] = useState(1); const [correoRecuperacion, setCorreoRecuperacion] = useState("");
+  const [codigo, setCodigo] = useState(""); const [nuevaContrasena, setNuevaContrasena] = useState(""); const [confirmarContrasena, setConfirmarContrasena] = useState("");
+  const [tipoReporte, setTipoReporte] = useState("Pagos"); const [estadoReporte, setEstadoReporte] = useState("Todos");
+  const [busquedaAviso, setBusquedaAviso] = useState(""); const [busquedaVisita, setBusquedaVisita] = useState("");
+  const [filtroVisita, setFiltroVisita] = useState("Todos"); const [busquedaIncidencia, setBusquedaIncidencia] = useState("");
+  const [filtroIncidencia, setFiltroIncidencia] = useState("Todos");
 
-  const guardarPagos = (nuevosPagos) => {
-    setPagos(nuevosPagos);
-    localStorage.setItem("losRoblesPagos", JSON.stringify(nuevosPagos));
-  };
-
-  const notificar = (texto, tipo = "informativo") => {
-    setTipoMensaje(tipo);
-    setMensaje(texto);
-  };
-
-  const manejarIngreso = (evento) => {
-    evento.preventDefault();
-    const correoLimpio = correo.trim().toLowerCase();
-    if (!correoLimpio || !contraseña.trim()) return notificar("Ingresa el correo electrónico y la contraseña.", "error");
-    if (!validarCorreo(correoLimpio)) return notificar("Captura un correo electrónico valido.", "error");
-    if (correoLimpio === usuario.correo && contraseña === usuario.contraseña) {
-      setSesiónIniciada(true);
-      setVista("inicio");
-      return notificar("Acceso correcto. Bienvenido al Residencial Los Robles.", "correcto");
-    }
+  const notificar = (texto, tipo = "informativo") => { setTipoMensaje(tipo); setMensaje(texto); };
+  const irA = (destino) => { setVista(destino); setMensaje(""); setBusqueda(""); setFiltroEstado("Todos"); };
+  const manejarIngreso = (e) => { e.preventDefault(); const c = correo.trim().toLowerCase();
+    if (!c || !contrasena.trim()) return notificar("Ingresa el correo electrónico y la contraseña.", "error");
+    if (!validarCorreo(c)) return notificar("Captura un correo electrónico válido.", "error");
+    if (c === usuario.correo && contrasena === usuario.contrasena) { setSesionIniciada(true); setVista("inicio"); return notificar("Acceso correcto. Bienvenido al Residencial Los Robles.", "correcto"); }
     notificar("Correo o contraseña incorrectos.", "error");
   };
-
-  const cerrarSesión = () => {
-    setSesiónIniciada(false);
-    setVista("inicio");
-    setCorreo("");
-    setContraseña("");
-    notificar("La sesión se cerro correctamente.", "informativo");
+  const cerrarSesion = () => { setSesionIniciada(false); setVista("inicio"); setCorreo(""); setContrasena(""); notificar("La sesión se cerró correctamente."); };
+  const solicitarCodigo = (e) => { e.preventDefault(); const c = correoRecuperacion.trim().toLowerCase();
+    if (!c) return notificar("Captura el correo registrado.", "error"); if (!validarCorreo(c)) return notificar("Captura un correo electrónico válido.", "error");
+    if (c !== usuario.correo) return notificar("El correo no se encuentra registrado en el prototipo.", "error"); setPasoRecuperacion(2); notificar("Código académico generado: ROBLES26. En producción se enviaría por correo.");
+  };
+  const validarCodigo = (e) => { e.preventDefault(); if (codigo.trim().toUpperCase() !== "ROBLES26") return notificar("El código de recuperación no es correcto.", "error"); setPasoRecuperacion(3); notificar("Código validado. Captura tu nueva contraseña.", "correcto"); };
+  const cambiarContrasena = (e) => { e.preventDefault();
+    if (nuevaContrasena.length < 8 || !/[A-Z]/.test(nuevaContrasena) || !/\d/.test(nuevaContrasena)) return notificar("La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.", "error");
+    if (nuevaContrasena !== confirmarContrasena) return notificar("Las contraseñas no coinciden.", "error");
+    const actualizado = { ...usuario, contrasena: nuevaContrasena }; guardar("losRoblesUsuario", actualizado, setUsuario); setPasoRecuperacion(1); setCorreoRecuperacion(""); setCodigo(""); setNuevaContrasena(""); setConfirmarContrasena(""); setVista("login"); notificar("Contraseña actualizada. Ya puedes iniciar sesión con la nueva contraseña.", "correcto");
   };
 
-  const pagosFiltrados = useMemo(() => pagos.filter((pago) => {
-    const termino = búsqueda.trim().toLowerCase();
-    const coincideBúsqueda = !termino || pago.vivienda.toLowerCase().includes(termino) || pago.residente.toLowerCase().includes(termino);
-    const coincideEstado = filtroEstado === "Todos" || pago.estado === filtroEstado;
-    return coincideBúsqueda && coincideEstado;
-  }), [pagos, búsqueda, filtroEstado]);
+  const pagosFiltrados = useMemo(() => pagos.filter(p => (!busqueda.trim() || `${p.vivienda} ${p.residente}`.toLowerCase().includes(busqueda.trim().toLowerCase())) && (filtroEstado === "Todos" || p.estado === filtroEstado)), [pagos, busqueda, filtroEstado]);
+  const resumenPagos = useMemo(() => ({ esperado: pagos.reduce((s,p)=>s+p.monto,0), pagado: pagos.filter(p=>p.estado==="Pagado").reduce((s,p)=>s+p.monto,0), pendiente: pagos.filter(p=>p.estado!=="Pagado").reduce((s,p)=>s+p.monto,0), alCorriente: pagos.filter(p=>p.estado==="Pagado").length, conAdeudo: pagos.filter(p=>p.estado!=="Pagado").length }), [pagos]);
+  const confirmarPago = (e) => { e.preventDefault(); if (!pagoSeleccionado) return; const nuevos=pagos.map(p=>p.id===pagoSeleccionado.id?{...p,estado:"Pagado",fechaPago:hoy(),metodo:metodoPago}:p); guardar("losRoblesPagos",nuevos,setPagos); setPagoSeleccionado(null); notificar(`Pago de la vivienda ${pagoSeleccionado.vivienda} registrado correctamente.`,"correcto"); };
 
-  const resumen = useMemo(() => ({
-    esperado: pagos.reduce((suma, pago) => suma + pago.monto, 0),
-    pagado: pagos.filter((pago) => pago.estado === "Pagado").reduce((suma, pago) => suma + pago.monto, 0),
-    pendiente: pagos.filter((pago) => pago.estado !== "Pagado").reduce((suma, pago) => suma + pago.monto, 0),
-    alCorriente: pagos.filter((pago) => pago.estado === "Pagado").length,
-    conAdeudo: pagos.filter((pago) => pago.estado !== "Pagado").length,
-  }), [pagos]);
+  const datosReporte = useMemo(() => {
+    if (tipoReporte === "Pagos") return pagos.filter(x => estadoReporte === "Todos" || x.estado === estadoReporte);
+    if (tipoReporte === "Visitas") return visitas.filter(x => estadoReporte === "Todos" || x.estado === estadoReporte);
+    if (tipoReporte === "Incidencias") return incidencias.filter(x => estadoReporte === "Todos" || x.estado === estadoReporte);
+    return avisos.filter(x => estadoReporte === "Todos" || x.estado === estadoReporte);
+  }, [tipoReporte, estadoReporte, pagos, visitas, incidencias, avisos]);
+  const descargarCSV = () => { if (!datosReporte.length) return notificar("No existen datos para exportar.","error"); const keys=Object.keys(datosReporte[0]); const csv=[keys.join(","),...datosReporte.map(r=>keys.map(k=>`"${String(r[k]??"").replaceAll('"','""')}"`).join(","))].join("\n"); const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`Reporte_${tipoReporte}_${hoy()}.csv`; a.click(); URL.revokeObjectURL(url); notificar("Reporte CSV compatible con Excel generado correctamente.","correcto"); };
 
-  const confirmarPago = (evento) => {
-    evento.preventDefault();
-    if (!pagoSeleccionado) return;
-    const actualizados = pagos.map((pago) => pago.id === pagoSeleccionado.id
-      ? { ...pago, estado: "Pagado", fechaPago: hoy(), método: métodoPago }
-      : pago);
-    guardarPagos(actualizados);
-    setPagoSeleccionado(null);
-    notificar(`Pago de la vivienda ${pagoSeleccionado.vivienda} registrado correctamente.`, "correcto");
-  };
+  const publicarAviso = (e) => { e.preventDefault(); const f=new FormData(e.currentTarget); const titulo=String(f.get("titulo")||"").trim(); const contenido=String(f.get("contenido")||"").trim(); if (!titulo || !contenido) return notificar("Captura el título y contenido del aviso.","error"); const nuevo={id:Date.now(),titulo,categoria:f.get("categoria"),destinatarios:f.get("destinatarios"),fecha:f.get("fecha")||hoy(),contenido,estado:"Activo"}; guardar("losRoblesAvisos",[nuevo,...avisos],setAvisos); e.currentTarget.reset(); notificar("Aviso publicado correctamente.","correcto"); };
+  const avisosFiltrados=avisos.filter(a=>`${a.titulo} ${a.categoria} ${a.destinatarios}`.toLowerCase().includes(busquedaAviso.toLowerCase()));
+  const alternarAviso=(id)=>guardar("losRoblesAvisos",avisos.map(a=>a.id===id?{...a,estado:a.estado==="Activo"?"Archivado":"Activo"}:a),setAvisos);
 
-  const reiniciarDatos = () => {
-    guardarPagos(PAGOS_INICIALES);
-    notificar("Los datos de demostración fueron restablecidos.", "informativo");
-  };
+  const registrarVisita=(e)=>{ e.preventDefault(); const f=new FormData(e.currentTarget); const visitante=String(f.get("visitante")||"").trim(); const vivienda=String(f.get("vivienda")||"").trim(); if(!visitante||!vivienda||!f.get("autoriza")) return notificar("Completa visitante, vivienda y residente que autoriza.","error"); const nueva={id:Date.now(),visitante,identificacion:f.get("identificacion")||"No indicada",vivienda,autoriza:f.get("autoriza"),motivo:f.get("motivo")||"Visita",entrada:f.get("entrada")||ahoraLocal(),salida:"",estado:"Dentro"}; guardar("losRoblesVisitas",[nueva,...visitas],setVisitas); e.currentTarget.reset(); notificar("Entrada de visitante registrada.","correcto"); };
+  const registrarSalida=(id)=>guardar("losRoblesVisitas",visitas.map(v=>v.id===id?{...v,salida:ahoraLocal(),estado:"Finalizada"}:v),setVisitas);
+  const visitasFiltradas=visitas.filter(v=>(!busquedaVisita||`${v.visitante} ${v.vivienda}`.toLowerCase().includes(busquedaVisita.toLowerCase()))&&(filtroVisita==="Todos"||v.estado===filtroVisita));
 
-  const solicitarCódigo = (evento) => {
-    evento.preventDefault();
-    const correoLimpio = correoRecuperacion.trim().toLowerCase();
-    if (!correoLimpio) return notificar("Captura el correo registrado.", "error");
-    if (!validarCorreo(correoLimpio)) return notificar("Captura un correo electrónico valido.", "error");
-    if (correoLimpio !== usuario.correo) return notificar("El correo no se encuentra registrado en el prototipo.", "error");
-    setPasoRecuperacion(2);
-    notificar("Código académico generado: ROBLES26. En producción se enviaria por correo.", "informativo");
-  };
+  const registrarIncidencia=(e)=>{ e.preventDefault(); const f=new FormData(e.currentTarget); const vivienda=String(f.get("vivienda")||"").trim(); const descripcion=String(f.get("descripcion")||"").trim(); if(!vivienda||!descripcion) return notificar("Captura la vivienda y la descripción de la incidencia.","error"); const consecutivo=String(incidencias.length+1).padStart(3,"0"); const nueva={id:Date.now(),folio:`INC-2026-${consecutivo}`,vivienda,categoria:f.get("categoria"),prioridad:f.get("prioridad"),descripcion,fecha:hoy(),estado:"Recibida"}; guardar("losRoblesIncidencias",[nueva,...incidencias],setIncidencias); e.currentTarget.reset(); notificar(`Incidencia ${nueva.folio} registrada correctamente.`,"correcto"); };
+  const avanzarIncidencia=(id)=>guardar("losRoblesIncidencias",incidencias.map(i=>i.id===id?{...i,estado:i.estado==="Recibida"?"En atención":i.estado==="En atención"?"Resuelta":"Resuelta"}:i),setIncidencias);
+  const incidenciasFiltradas=incidencias.filter(i=>(!busquedaIncidencia||`${i.folio} ${i.vivienda} ${i.categoria}`.toLowerCase().includes(busquedaIncidencia.toLowerCase()))&&(filtroIncidencia==="Todos"||i.estado===filtroIncidencia));
 
-  const validarCódigo = (evento) => {
-    evento.preventDefault();
-    if (código.trim().toUpperCase() !== "ROBLES26") return notificar("El código de recuperacion no es correcto.", "error");
-    setPasoRecuperacion(3);
-    notificar("Código validado. Captura tu nueva contraseña.", "correcto");
-  };
+  const Mensaje=()=>mensaje?<p className={`mensaje ${tipoMensaje}`} role="status">{mensaje}</p>:null;
+  const Titulo=({historia,titulo,descripcion,accion})=><div className="titulo-seccion"><div><p className="etiqueta">{historia}</p><h2>{titulo}</h2><p>{descripcion}</p></div>{accion}</div>;
 
-  const cambiarContraseña = (evento) => {
-    evento.preventDefault();
-    if (nuevaContraseña.length < 8 || !/[A-Z]/.test(nuevaContraseña) || !/\d/.test(nuevaContraseña)) {
-      return notificar("La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.", "error");
-    }
-    if (nuevaContraseña !== confirmarContraseña) return notificar("Las contraseñas no coinciden.", "error");
-    const usuarioActualizado = { ...usuario, contraseña: nuevaContraseña };
-    setUsuario(usuarioActualizado);
-    localStorage.setItem("losRoblesUsuario", JSON.stringify(usuarioActualizado));
-    setPasoRecuperacion(1);
-    setCorreoRecuperacion("");
-    setCódigo("");
-    setNuevaContraseña("");
-    setConfirmarContraseña("");
-    setVista("login");
-    notificar("Contraseña actualizada. Ya puedes iniciar sesión con la nueva contraseña.", "correcto");
-  };
-
-  const Mensaje = () => mensaje ? <p className={`mensaje ${tipoMensaje}`} role="status">{mensaje}</p> : null;
-
-  if (!sesiónIniciada) {
-    if (vista === "recuperacion") {
-      return (
-        <main className="aplicacion">
-          <section className="tarjeta-acceso">
-            <div className="marca"><div className="icono-casa">LR</div><div><p className="etiqueta">Sprint 2 · H07</p><h1>Recuperar contraseña</h1></div></div>
-            <p className="descripcion">Restablece el acceso mediante el flujo académico de recuperacion.</p>
-            <div className="pasos"><span className={pasoRecuperacion >= 1 ? "activo" : ""}>1. Correo</span><span className={pasoRecuperacion >= 2 ? "activo" : ""}>2. Código</span><span className={pasoRecuperacion >= 3 ? "activo" : ""}>3. Contraseña</span></div>
-            {pasoRecuperacion === 1 && <form onSubmit={solicitarCódigo} noValidate><label htmlFor="correoRecuperacion">Correo registrado</label><input id="correoRecuperacion" type="email" value={correoRecuperacion} onChange={(e) => setCorreoRecuperacion(e.target.value)} placeholder="residente@losrobles.mx" /><button className="boton-principal" type="submit">Generar código</button></form>}
-            {pasoRecuperacion === 2 && <form onSubmit={validarCódigo}><div className="código-demo"><strong>Código de demostración</strong><span>ROBLES26</span></div><label htmlFor="código">Código temporal</label><input id="código" value={código} onChange={(e) => setCódigo(e.target.value)} placeholder="Captura el código" /><button className="boton-principal" type="submit">Validar código</button></form>}
-            {pasoRecuperacion === 3 && <form onSubmit={cambiarContraseña}><label htmlFor="nuevaContraseña">Nueva contraseña</label><input id="nuevaContraseña" type="password" value={nuevaContraseña} onChange={(e) => setNuevaContraseña(e.target.value)} /><small>Mínimo 8 caracteres, una mayúscula y un número.</small><label htmlFor="confirmarContraseña">Confirmar contraseña</label><input id="confirmarContraseña" type="password" value={confirmarContraseña} onChange={(e) => setConfirmarContraseña(e.target.value)} /><button className="boton-principal" type="submit">Actualizar contraseña</button></form>}
-            <Mensaje />
-            <button type="button" className="enlace-recuperacion" onClick={() => { setVista("login"); setPasoRecuperacion(1); notificar("Regresaste al inicio de sesión."); }}>Volver al inicio de sesión</button>
-            <p className="nota">Prototipo académico: el código se muestra en pantalla y no se envia por correo.</p>
-          </section>
-        </main>
-      );
-    }
-
-    return (
-      <main className="aplicacion">
-        <section className="tarjeta-acceso">
-          <div className="marca"><div className="icono-casa">LR</div><div><p className="etiqueta">Sistema comunitario</p><h1>Residencial Los Robles</h1></div></div>
-          <p className="descripcion">Acceso al prototipo de gestión de servicios comunitarios.</p>
-          <div className="credenciales"><strong>Credenciales iniciales</strong><span>Correo: residente@losrobles.mx</span><span>Contraseña inicial: Robles2026</span></div>
-          <form onSubmit={manejarIngreso} noValidate><label htmlFor="correo">Correo electrónico</label><input id="correo" type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder="residente@losrobles.mx" /><label htmlFor="contraseña">Contraseña</label><input id="contraseña" type="password" value={contraseña} onChange={(e) => setContraseña(e.target.value)} placeholder="Captura tu contraseña" /><button className="boton-principal" type="submit">Ingresar</button></form>
-          <button type="button" className="enlace-recuperacion" onClick={() => { setVista("recuperacion"); setMensaje(""); }}>¿Olvidaste tu contraseña?</button>
-          <Mensaje />
-          <section className="base-técnica"><h2>Avance acumulado</h2><dl><div><dt>Fase anterior</dt><dd>Sprint 1 aprobado</dd></div><div><dt>Fase actual</dt><dd>Sprint 2</dd></div><div><dt>Historia H03</dt><dd>Panel de pagos</dd></div><div><dt>Historia H07</dt><dd>Recuperacion de contraseña</dd></div></dl></section>
-          <p className="nota">Prototipo académico. No utilices datos personales ni credenciales reales.</p>
-        </section>
-      </main>
-    );
+  if(!sesionIniciada){
+    if(vista==="recuperacion") return <main className="aplicacion"><section className="tarjeta-acceso"><div className="marca"><div className="icono-casa">LR</div><div><p className="etiqueta">Sprint 2 · H07</p><h1>Recuperar contraseña</h1></div></div><p className="descripcion">Restablece el acceso mediante el flujo académico de recuperación.</p><div className="pasos"><span className={pasoRecuperacion>=1?"activo":""}>1. Correo</span><span className={pasoRecuperacion>=2?"activo":""}>2. Código</span><span className={pasoRecuperacion>=3?"activo":""}>3. Contraseña</span></div>{pasoRecuperacion===1&&<form onSubmit={solicitarCodigo}><label>Correo registrado</label><input type="email" value={correoRecuperacion} onChange={e=>setCorreoRecuperacion(e.target.value)} /><button className="boton-principal">Generar código</button></form>}{pasoRecuperacion===2&&<form onSubmit={validarCodigo}><div className="codigo-demo"><strong>Código de demostración</strong><span>ROBLES26</span></div><label>Código temporal</label><input value={codigo} onChange={e=>setCodigo(e.target.value)} /><button className="boton-principal">Validar código</button></form>}{pasoRecuperacion===3&&<form onSubmit={cambiarContrasena}><label>Nueva contraseña</label><input type="password" value={nuevaContrasena} onChange={e=>setNuevaContrasena(e.target.value)} /><small>Mínimo 8 caracteres, una mayúscula y un número.</small><label>Confirmar contraseña</label><input type="password" value={confirmarContrasena} onChange={e=>setConfirmarContrasena(e.target.value)} /><button className="boton-principal">Actualizar contraseña</button></form>}<Mensaje/><button className="enlace-recuperacion" onClick={()=>{setVista("login");setPasoRecuperacion(1);}}>Volver al inicio de sesión</button><p className="nota">Prototipo académico: el código se muestra en pantalla y no se envía por correo.</p></section></main>;
+    return <main className="aplicacion"><section className="tarjeta-acceso"><div className="marca"><div className="icono-casa">LR</div><div><p className="etiqueta">Sistema comunitario</p><h1>Residencial Los Robles</h1></div></div><p className="descripcion">Acceso al prototipo de gestión de servicios comunitarios.</p><div className="credenciales"><strong>Credenciales de demostración</strong><span>Correo: residente@losrobles.mx</span><span>Contraseña inicial: Robles2026</span></div><form onSubmit={manejarIngreso}><label>Correo electrónico</label><input type="email" value={correo} onChange={e=>setCorreo(e.target.value)} /><label>Contraseña</label><input type="password" value={contrasena} onChange={e=>setContrasena(e.target.value)} /><button className="boton-principal">Ingresar</button></form><button className="enlace-recuperacion" onClick={()=>{setVista("recuperacion");setMensaje("");}}>¿Olvidaste tu contraseña?</button><Mensaje/><section className="base-tecnica"><h2>Avance acumulado</h2><dl><div><dt>Fases concluidas</dt><dd>Sprints 1 y 2</dd></div><div><dt>Fase actual</dt><dd>Sprints 3, 4 y 5</dd></div><div><dt>Historias nuevas</dt><dd>H04, H05, H06, H08, H09 y H10</dd></div></dl></section><p className="nota">Prototipo académico. No utilices datos personales ni credenciales reales.</p></section></main>;
   }
 
-  return (
-    <main className="aplicacion">
-      <section className="panel">
-        <header className="encabezado-panel"><div><p className="etiqueta">Sistema comunitario · Fase 2</p><h1>Residencial Los Robles</h1><p>Segundo progreso de desarrollo en React.</p></div><button type="button" className="boton-secundario" onClick={cerrarSesión}>Cerrar sesión</button></header>
-        <nav className="navegacion"><button className={vista === "inicio" ? "activo" : ""} onClick={() => setVista("inicio")}>Inicio</button><button className={vista === "pagos" ? "activo" : ""} onClick={() => { setVista("pagos"); setMensaje(""); }}>Panel de pagos</button></nav>
+  const modulos=[
+    ["Sprint 1","Acceso de residentes","H01 permanece integrada y disponible.","inicio"],
+    ["Sprint 2 · H03","Panel de pagos","Cuotas, búsqueda, filtros y registro de pagos.","pagos"],
+    ["Sprint 3 · H04","Reportes","Exportación CSV e impresión para PDF.","reportes"],
+    ["Sprint 3 · H09","Avisos masivos","Publicación y archivo de comunicados.","avisos"],
+    ["Sprint 4 · H08","Control de visitas","Entradas, salidas e historial.","visitas"],
+    ["Sprint 5 · H10","Buzón de incidencias","Folios, prioridades y seguimiento.","incidencias"],
+    ["Sprint 5 · H06","Manual y ayuda","Guía imprimible y preguntas frecuentes.","manual"],
+  ];
 
-        {vista === "inicio" && <><div className="bienvenida"><strong>Acceso validado correctamente.</strong><span>Usuario: {usuario.correo}</span></div><h2>Módulos del proyecto</h2><section className="cuadricula-módulos"><article className="módulo módulo-disponible"><span className="estado">Sprint 1</span><h3>Acceso de residentes</h3><p>Interfaz y validaciónes aprobadas en la Fase 1.</p><button onClick={() => notificar("H01 permanece disponible e integrada con los nuevos módulos.", "correcto")}>Ver estado</button></article><article className="módulo módulo-disponible"><span className="estado">Sprint 2 · H03</span><h3>Panel de pagos</h3><p>Consulta, búsqueda, filtros y registro de cuotas residenciales.</p><button onClick={() => setVista("pagos")}>Abrir módulo</button></article><article className="módulo módulo-disponible"><span className="estado">Sprint 2 · H07</span><h3>Recuperacion de contraseña</h3><p>Flujo de validación y actualizacion disponible desde el acceso.</p><button onClick={() => notificar("H07 se encuentra integrada en la pantalla de acceso.", "correcto")}>Ver estado</button></article><article className="módulo"><span className="estado">Sprint 3</span><h3>Reportes y avisos</h3><p>Programado para la siguiente fase.</p><button onClick={() => notificar("Reportes y avisos permanecen programados para el Sprint 3.")}>Consultar planeacion</button></article><article className="módulo"><span className="estado">Sprint 4</span><h3>Control de visitas</h3><p>Programado conforme al Sprint Schedule.</p><button onClick={() => notificar("Control de visitas permanece programado para el Sprint 4.")}>Consultar planeacion</button></article><article className="módulo"><span className="estado">Sprint 5</span><h3>Incidencias y manual</h3><p>Programado para el cierre del desarrollo.</p><button onClick={() => notificar("Incidencias y manual permanecen programados para el Sprint 5.")}>Consultar planeacion</button></article></section></>}
+  return <main className="aplicacion"><section className="panel"><header className="encabezado-panel"><div><p className="etiqueta">Sistema comunitario · Fase 3</p><h1>Residencial Los Robles</h1><p>Tercer progreso de desarrollo en React.</p></div><button className="boton-secundario" onClick={cerrarSesion}>Cerrar sesión</button></header><nav className="navegacion" aria-label="Módulos principales">{[["inicio","Inicio"],["pagos","Pagos"],["reportes","Reportes"],["avisos","Avisos"],["visitas","Visitas"],["incidencias","Incidencias"],["manual","Manual"]].map(([v,n])=><button key={v} className={vista===v?"activo":""} onClick={()=>irA(v)}>{n}</button>)}</nav>
 
-        {vista === "pagos" && <section className="seccion-pagos"><div className="titulo-seccion"><div><p className="etiqueta">Sprint 2 · Historia H03</p><h2>Panel de pagos</h2><p>Control académico de cuotas de mantenimiento.</p></div><button className="boton-terciario" onClick={reiniciarDatos}>Restablecer datos</button></div><section className="resumen-pagos"><article><span>Total esperado</span><strong>{dinero(resumen.esperado)}</strong></article><article><span>Total pagado</span><strong>{dinero(resumen.pagado)}</strong></article><article><span>Saldo pendiente</span><strong>{dinero(resumen.pendiente)}</strong></article><article><span>Viviendas al corriente</span><strong>{resumen.alCorriente}</strong></article><article><span>Viviendas con adeudo</span><strong>{resumen.conAdeudo}</strong></article></section><div className="barra-filtros"><div><label htmlFor="búsqueda">Buscar residente o vivienda</label><input id="búsqueda" value={búsqueda} onChange={(e) => setBúsqueda(e.target.value)} placeholder="Ejemplo: A-01 o Laura" /></div><div><label htmlFor="estadoPago">Estado</label><select id="estadoPago" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}><option>Todos</option><option>Pagado</option><option>Pendiente</option><option>Vencido</option></select></div></div><div className="contenedor-tabla"><table><thead><tr><th>Vivienda</th><th>Residente</th><th>Periodo</th><th>Monto</th><th>Vencimiento</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{pagosFiltrados.length ? pagosFiltrados.map((pago) => <tr key={pago.id}><td data-label="Vivienda">{pago.vivienda}</td><td data-label="Residente">{pago.residente}</td><td data-label="Periodo">{pago.periodo}</td><td data-label="Monto">{dinero(pago.monto)}</td><td data-label="Vencimiento">{pago.vencimiento}</td><td data-label="Estado"><span className={`insignia ${pago.estado.toLowerCase()}`}>{pago.estado}</span></td><td data-label="Acción">{pago.estado === "Pagado" ? <span className="fecha-pago">{pago.fechaPago}<br />{pago.método}</span> : <button className="boton-tabla" onClick={() => { setPagoSeleccionado(pago); setMensaje(""); }}>Registrar pago</button>}</td></tr>) : <tr><td colSpan="7" className="sin-resultados">No se encontraron registros con esos criterios.</td></tr>}</tbody></table></div><p className="contador">Mostrando {pagosFiltrados.length} de {pagos.length} registros.</p></section>}
-        <Mensaje />
-      </section>
+  {vista==="inicio"&&<><div className="bienvenida"><strong>Acceso validado correctamente.</strong><span>Usuario: {usuario.correo}</span></div><h2>Módulos del proyecto</h2><section className="cuadricula-modulos">{modulos.map(([s,t,d,v])=><article className="modulo modulo-disponible" key={t}><span className="estado">{s}</span><h3>{t}</h3><p>{d}</p><button onClick={()=>v==="inicio"?notificar("H01 permanece disponible e integrada.","correcto"):irA(v)}>{v==="inicio"?"Ver estado":"Abrir módulo"}</button></article>)}</section><div className="cierre-h05"><strong>H05 · Diseño móvil</strong><span>Las vistas, formularios, tarjetas, navegación y tablas fueron adaptados para computadora, tableta y teléfono.</span></div></>}
 
-      {pagoSeleccionado && <div className="fondo-modal" role="presentation"><section className="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModal"><p className="etiqueta">Registro de movimiento</p><h2 id="tituloModal">Confirmar pago</h2><dl><div><dt>Vivienda</dt><dd>{pagoSeleccionado.vivienda}</dd></div><div><dt>Residente</dt><dd>{pagoSeleccionado.residente}</dd></div><div><dt>Monto</dt><dd>{dinero(pagoSeleccionado.monto)}</dd></div></dl><form onSubmit={confirmarPago}><label htmlFor="métodoPago">Método de pago</label><select id="métodoPago" value={métodoPago} onChange={(e) => setMétodoPago(e.target.value)}><option>Transferencia</option><option>Efectivo</option><option>Tarjeta</option></select><div className="acciones-modal"><button type="button" className="boton-secundario" onClick={() => setPagoSeleccionado(null)}>Cancelar</button><button type="submit" className="boton-principal">Confirmar pago</button></div></form></section></div>}
-    </main>
-  );
+  {vista==="pagos"&&<section><Titulo historia="Sprint 2 · H03" titulo="Panel de pagos" descripcion="Control académico de cuotas de mantenimiento." accion={<button className="boton-terciario" onClick={()=>{guardar("losRoblesPagos",PAGOS_INICIALES,setPagos);notificar("Datos restablecidos.");}}>Restablecer datos</button>}/><section className="resumen-pagos">{[["Total esperado",dinero(resumenPagos.esperado)],["Total pagado",dinero(resumenPagos.pagado)],["Saldo pendiente",dinero(resumenPagos.pendiente)],["Viviendas al corriente",resumenPagos.alCorriente],["Viviendas con adeudo",resumenPagos.conAdeudo]].map(x=><article key={x[0]}><span>{x[0]}</span><strong>{x[1]}</strong></article>)}</section><div className="barra-filtros"><div><label>Buscar residente o vivienda</label><input value={busqueda} onChange={e=>setBusqueda(e.target.value)} /></div><div><label>Estado</label><select value={filtroEstado} onChange={e=>setFiltroEstado(e.target.value)}>{["Todos","Pagado","Pendiente","Vencido"].map(x=><option key={x}>{x}</option>)}</select></div></div><div className="contenedor-tabla"><table><thead><tr><th>Vivienda</th><th>Residente</th><th>Periodo</th><th>Monto</th><th>Vencimiento</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{pagosFiltrados.map(p=><tr key={p.id}><td data-label="Vivienda">{p.vivienda}</td><td data-label="Residente">{p.residente}</td><td data-label="Periodo">{p.periodo}</td><td data-label="Monto">{dinero(p.monto)}</td><td data-label="Vencimiento">{p.vencimiento}</td><td data-label="Estado"><span className={`insignia ${p.estado.toLowerCase()}`}>{p.estado}</span></td><td data-label="Acción">{p.estado==="Pagado"?<span className="fecha-pago">{p.fechaPago}<br/>{p.metodo}</span>:<button className="boton-tabla" onClick={()=>setPagoSeleccionado(p)}>Registrar pago</button>}</td></tr>)}</tbody></table></div></section>}
+
+  {vista==="reportes"&&<section><Titulo historia="Sprint 3 · H04" titulo="Reportes PDF y Excel" descripcion="Consulta, exporta a CSV compatible con Excel o imprime para guardar como PDF."/><div className="dos-columnas"><section className="tarjeta-formulario"><h3>Configurar reporte</h3><label>Tipo de información</label><select value={tipoReporte} onChange={e=>{setTipoReporte(e.target.value);setEstadoReporte("Todos");}}>{["Pagos","Visitas","Incidencias","Avisos"].map(x=><option key={x}>{x}</option>)}</select><label>Estado</label><select value={estadoReporte} onChange={e=>setEstadoReporte(e.target.value)}><option>Todos</option>{tipoReporte==="Pagos"&&<><option>Pagado</option><option>Pendiente</option><option>Vencido</option></>}{tipoReporte==="Visitas"&&<><option>Dentro</option><option>Finalizada</option></>}{tipoReporte==="Incidencias"&&<><option>Recibida</option><option>En atención</option><option>Resuelta</option></>}{tipoReporte==="Avisos"&&<><option>Activo</option><option>Archivado</option></>}</select><div className="acciones"><button className="boton-principal" onClick={descargarCSV}>Descargar CSV</button><button className="boton-terciario" onClick={()=>window.print()}>Imprimir / guardar PDF</button></div></section><section className="tarjeta-resumen"><span>Vista previa</span><strong>{datosReporte.length}</strong><p>registros incluidos</p><small>Generado el {hoy()}</small></section></div><div className="lista-compacta">{datosReporte.map((x,i)=><article key={x.id??i}><strong>{x.vivienda||x.folio||x.titulo||x.visitante}</strong><span>{x.residente||x.descripcion||x.contenido||x.motivo}</span><em>{x.estado}</em></article>)}</div></section>}
+
+  {vista==="avisos"&&<section><Titulo historia="Sprint 3 · H09" titulo="Avisos masivos" descripcion="Publicación y consulta de comunicados para la comunidad."/><div className="dos-columnas"><form className="tarjeta-formulario" onSubmit={publicarAviso}><h3>Nuevo aviso</h3><label>Título</label><input name="titulo"/><label>Categoría</label><select name="categoria"><option>Administración</option><option>Mantenimiento</option><option>Seguridad</option><option>Comunidad</option></select><label>Destinatarios</label><select name="destinatarios"><option>Todos los residentes</option><option>Viviendas con adeudo</option><option>Mesa Directiva</option></select><label>Fecha</label><input name="fecha" type="date" defaultValue={hoy()}/><label>Contenido</label><textarea name="contenido" rows="4"/><button className="boton-principal">Publicar aviso</button></form><section><label>Buscar avisos</label><input value={busquedaAviso} onChange={e=>setBusquedaAviso(e.target.value)} placeholder="Título, categoría o destinatario"/><div className="lista-tarjetas">{avisosFiltrados.map(a=><article key={a.id}><div><span className={`insignia ${a.estado.toLowerCase()}`}>{a.estado}</span><small>{a.fecha} · {a.categoria}</small></div><h3>{a.titulo}</h3><p>{a.contenido}</p><small>Destinatarios: {a.destinatarios}</small><button className="boton-terciario" onClick={()=>alternarAviso(a.id)}>{a.estado==="Activo"?"Archivar":"Reactivar"}</button></article>)}</div></section></div></section>}
+
+  {vista==="visitas"&&<section><Titulo historia="Sprint 4 · H08" titulo="Control de visitas" descripcion="Registro de entradas, salidas e historial de visitantes."/><section className="resumen-pagos resumen-tres"><article><span>Visitantes dentro</span><strong>{visitas.filter(v=>v.estado==="Dentro").length}</strong></article><article><span>Visitas finalizadas</span><strong>{visitas.filter(v=>v.estado==="Finalizada").length}</strong></article><article><span>Total de registros</span><strong>{visitas.length}</strong></article></section><div className="dos-columnas"><form className="tarjeta-formulario" onSubmit={registrarVisita}><h3>Registrar entrada</h3><label>Nombre del visitante</label><input name="visitante"/><label>Identificación</label><input name="identificacion"/><label>Vivienda</label><input name="vivienda" placeholder="Ejemplo: A-01"/><label>Residente que autoriza</label><input name="autoriza"/><label>Motivo</label><input name="motivo"/><label>Fecha y hora de entrada</label><input name="entrada" type="datetime-local" defaultValue={ahoraLocal()}/><button className="boton-principal">Registrar entrada</button></form><section><div className="barra-filtros"><div><label>Buscar</label><input value={busquedaVisita} onChange={e=>setBusquedaVisita(e.target.value)} /></div><div><label>Estado</label><select value={filtroVisita} onChange={e=>setFiltroVisita(e.target.value)}>{["Todos","Dentro","Finalizada"].map(x=><option key={x}>{x}</option>)}</select></div></div><div className="lista-tarjetas">{visitasFiltradas.map(v=><article key={v.id}><div><span className={`insignia ${v.estado.toLowerCase()}`}>{v.estado}</span><small>{v.vivienda}</small></div><h3>{v.visitante}</h3><p>{v.motivo} · Autoriza: {v.autoriza}</p><small>Entrada: {v.entrada.replace("T"," ")}</small>{v.estado==="Dentro"?<button className="boton-tabla" onClick={()=>registrarSalida(v.id)}>Registrar salida</button>:<small>Salida: {v.salida.replace("T"," ")}</small>}</article>)}</div></section></div></section>}
+
+  {vista==="incidencias"&&<section><Titulo historia="Sprint 5 · H10" titulo="Buzón de incidencias" descripcion="Registro, priorización y seguimiento de reportes comunitarios."/><section className="resumen-pagos resumen-tres">{["Recibida","En atención","Resuelta"].map(x=><article key={x}><span>{x}</span><strong>{incidencias.filter(i=>i.estado===x).length}</strong></article>)}</section><div className="dos-columnas"><form className="tarjeta-formulario" onSubmit={registrarIncidencia}><h3>Nueva incidencia</h3><label>Vivienda</label><input name="vivienda"/><label>Categoría</label><select name="categoria">{["Seguridad","Mantenimiento","Alumbrado","Ruido","Áreas comunes","Otro"].map(x=><option key={x}>{x}</option>)}</select><label>Prioridad</label><select name="prioridad"><option>Baja</option><option>Media</option><option>Alta</option></select><label>Descripción</label><textarea name="descripcion" rows="5"/><button className="boton-principal">Registrar incidencia</button></form><section><div className="barra-filtros"><div><label>Buscar folio o vivienda</label><input value={busquedaIncidencia} onChange={e=>setBusquedaIncidencia(e.target.value)}/></div><div><label>Estado</label><select value={filtroIncidencia} onChange={e=>setFiltroIncidencia(e.target.value)}>{["Todos","Recibida","En atención","Resuelta"].map(x=><option key={x}>{x}</option>)}</select></div></div><div className="lista-tarjetas">{incidenciasFiltradas.map(i=><article key={i.id}><div><span className={`insignia ${i.estado.toLowerCase().replace(" ","-")}`}>{i.estado}</span><span className={`prioridad ${i.prioridad.toLowerCase()}`}>{i.prioridad}</span></div><h3>{i.folio} · {i.vivienda}</h3><p>{i.descripcion}</p><small>{i.fecha} · {i.categoria}</small>{i.estado!=="Resuelta"&&<button className="boton-tabla" onClick={()=>avanzarIncidencia(i.id)}>{i.estado==="Recibida"?"Iniciar atención":"Marcar resuelta"}</button>}</article>)}</div></section></div></section>}
+
+  {vista==="manual"&&<section className="manual"><Titulo historia="Sprint 5 · H06" titulo="Manual y ayuda" descripcion="Guía de uso del prototipo Residencial Los Robles." accion={<button className="boton-terciario" onClick={()=>window.print()}>Imprimir / guardar PDF</button>}/><div className="indice-manual"><strong>Contenido</strong><span>Acceso · Pagos · Reportes · Avisos · Visitas · Incidencias · Preguntas frecuentes</span></div>{[["1. Acceso","Ingresa con residente@losrobles.mx y la contraseña académica Robles2026. La recuperación utiliza el código ROBLES26."],["2. Panel de pagos","Consulta indicadores, busca una vivienda, filtra estados y confirma el método antes de registrar un pago."],["3. Reportes","Selecciona el módulo y estado. Descarga CSV para Excel o usa Imprimir / guardar PDF."],["4. Avisos","Captura título, categoría, destinatarios, fecha y contenido. Los avisos pueden archivarse o reactivarse."],["5. Visitas","Registra entrada, vivienda y autorización. Cuando la visita concluya, usa Registrar salida."],["6. Incidencias","Captura vivienda, categoría, prioridad y descripción. El sistema genera un folio y permite avanzar el estado."],["7. Seguridad","No utilices datos personales reales. localStorage se usa únicamente para demostrar persistencia académica."]].map(x=><article key={x[0]}><h3>{x[0]}</h3><p>{x[1]}</p></article>)}<section className="faq"><h3>Preguntas frecuentes</h3><details><summary>¿Cómo restablezco los pagos?</summary><p>Usa el botón Restablecer datos en el Panel de Pagos.</p></details><details><summary>¿Qué hago si cambié la contraseña?</summary><p>Ingresa con la nueva contraseña o repite el flujo de recuperación.</p></details><details><summary>¿Los datos son reales?</summary><p>No. Todos los datos pertenecen a una demostración académica.</p></details></section></section>}
+
+  <Mensaje/></section>{pagoSeleccionado&&<div className="fondo-modal"><section className="modal" role="dialog" aria-modal="true"><p className="etiqueta">Registro de movimiento</p><h2>Confirmar pago</h2><dl><div><dt>Vivienda</dt><dd>{pagoSeleccionado.vivienda}</dd></div><div><dt>Residente</dt><dd>{pagoSeleccionado.residente}</dd></div><div><dt>Monto</dt><dd>{dinero(pagoSeleccionado.monto)}</dd></div></dl><form onSubmit={confirmarPago}><label>Método de pago</label><select value={metodoPago} onChange={e=>setMetodoPago(e.target.value)}><option>Transferencia</option><option>Efectivo</option><option>Tarjeta</option></select><div className="acciones-modal"><button type="button" className="boton-secundario" onClick={()=>setPagoSeleccionado(null)}>Cancelar</button><button className="boton-principal">Confirmar pago</button></div></form></section></div>}</main>;
 }
-
 export default App;
